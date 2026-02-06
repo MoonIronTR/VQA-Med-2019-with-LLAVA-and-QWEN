@@ -1,0 +1,46 @@
+# 1. Drive Bağla
+from google.colab import drive
+drive.mount('/content/drive')
+
+# 2. Kurulumlar (Qwen gereksinimleri çıkarıldı, hızlı kurulum)
+print("📦 Kütüphaneler kuruluyor...")
+!pip install -q streamlit pyngrok
+!pip install -q transformers peft bitsandbytes accelerate safetensors
+!pip install -q nltk sentence-transformers huggingface_hub
+
+# 3. Token ve Giriş İşlemleri
+from google.colab import userdata
+from huggingface_hub import login
+from pyngrok import ngrok
+import os
+import time
+
+try:
+    ngrok_key = userdata.get('NGROK_TOKEN')
+    hf_key = userdata.get('HF_TOKEN')
+
+    ngrok.kill() # Eski tüneli kapat
+    !ngrok config add-authtoken $ngrok_key
+    login(token=hf_key)
+    print("✅ Giriş başarılı!")
+except Exception as e:
+    print(f"❌ Token hatası: {e}")
+
+# 4. Uygulamayı Başlat
+script_path = "/content/drive/MyDrive/VQA_Multi/app_multi_colab.py"
+
+if not os.path.exists(script_path):
+    print(f"❌ HATA: Dosya bulunamadı -> {script_path}")
+else:
+    print(f"🚀 Uygulama başlatılıyor...")
+    get_ipython().system_raw(f'streamlit run "{script_path}" --server.port 8501 &')
+    time.sleep(4)
+    try:
+        public_url = ngrok.connect(8501).public_url
+        print("\n" + "="*50)
+        print(f"🎉 TIKLA VE GİT -> {public_url}")
+        print("="*50 + "\n")
+    except Exception as e:
+        print(f"Tünel hatası: {e}")
+
+    while True: time.sleep(100)
